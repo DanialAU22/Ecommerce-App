@@ -12,9 +12,11 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
     return Material(
       borderRadius: BorderRadius.circular(14),
-      color: const Color(0xFFE8F2FF),
+      color: scheme.primaryContainer.withValues(alpha: 0.35),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
@@ -22,15 +24,16 @@ class CategoryCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFBFD6F6)),
+            border: Border.all(color: scheme.primary.withValues(alpha: 0.25)),
           ),
           child: Center(
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
+                color: scheme.onSurface,
               ),
             ),
           ),

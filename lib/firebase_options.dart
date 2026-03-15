@@ -15,6 +15,18 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
+  static const String _webApiKey = String.fromEnvironment('FIREBASE_WEB_API_KEY');
+  static const String _androidApiKey = String.fromEnvironment(
+    'FIREBASE_ANDROID_API_KEY',
+  );
+  static const String _iosApiKey = String.fromEnvironment('FIREBASE_IOS_API_KEY');
+  static const String _macosApiKey = String.fromEnvironment(
+    'FIREBASE_MACOS_API_KEY',
+  );
+  static const String _windowsApiKey = String.fromEnvironment(
+    'FIREBASE_WINDOWS_API_KEY',
+  );
+
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
@@ -41,7 +53,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyANwEONE2behrSjUixVC8cSUN78mG7vw9Y',
+    apiKey: _webApiKey,
     appId: '1:774850821450:web:898c2d1ab7e531f4d415b3',
     messagingSenderId: '774850821450',
     projectId: 'ecommerceapp-8f3a3',
@@ -51,7 +63,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBckZP_tiR8jYmC2aHZ1ak1sMEGp3HR0wU',
+    apiKey: _androidApiKey,
     appId: '1:774850821450:android:bd0380cd5182a2f3d415b3',
     messagingSenderId: '774850821450',
     projectId: 'ecommerceapp-8f3a3',
@@ -59,7 +71,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAMnL6oFl90GOlyL-TmDDn-6eklW-Zr4VU',
+    apiKey: _iosApiKey,
     appId: '1:774850821450:ios:6189136d605528c2d415b3',
     messagingSenderId: '774850821450',
     projectId: 'ecommerceapp-8f3a3',
@@ -68,7 +80,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAMnL6oFl90GOlyL-TmDDn-6eklW-Zr4VU',
+    apiKey: _macosApiKey,
     appId: '1:774850821450:ios:6189136d605528c2d415b3',
     messagingSenderId: '774850821450',
     projectId: 'ecommerceapp-8f3a3',
@@ -77,7 +89,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyANwEONE2behrSjUixVC8cSUN78mG7vw9Y',
+    apiKey: _windowsApiKey,
     appId: '1:774850821450:web:2aa19582b5983357d415b3',
     messagingSenderId: '774850821450',
     projectId: 'ecommerceapp-8f3a3',

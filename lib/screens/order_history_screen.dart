@@ -36,7 +36,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           if (provider.orders.isEmpty) {
             return const EmptyStateWidget(
               icon: Icons.receipt_long_outlined,
-              message: 'No orders placed yet.',
+              title: 'No Orders Yet',
+              message: 'Your confirmed purchases will appear here.',
             );
           }
 

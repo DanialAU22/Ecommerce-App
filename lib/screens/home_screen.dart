@@ -1,12 +1,16 @@
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/widgets/empty_state_widget.dart';
 import '../core/widgets/network_error_screen.dart';
+import '../models/product_model.dart';
 import '../providers/product_provider.dart';
+import '../widgets/category_chip.dart';
 import '../widgets/loading_skeleton.dart';
 import '../widgets/product_card.dart';
 import 'product_detail_screen.dart';
-import 'product_list_screen.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +20,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String? _selectedCategory;
+
   @override
   void initState() {
     super.initState();
@@ -37,120 +43,96 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         if (provider.error != null && provider.products.isEmpty) {
-          return _buildError(provider.error!);
+          return NetworkErrorScreen(
+            message: provider.error!,
+            onRetry: _refresh,
+          );
         }
+
+        if (provider.products.isEmpty) {
+          return const EmptyStateWidget(
+            icon: Icons.storefront_outlined,
+            title: 'No Products Yet',
+            message: 'Pull down to refresh and load products.',
+          );
+        }
+
+        final List<Product> base = _selectedCategory == null
+            ? provider.products
+            : provider.products
+                .where((Product product) => product.category == _selectedCategory)
+                .toList();
+
+        final List<Product> trending = base.take(6).toList();
+        final List<Product> bestSelling = List<Product>.from(base)
+          ..sort((Product a, Product b) => b.rating.count.compareTo(a.rating.count));
+        final List<Product> recommended = List<Product>.from(base)
+          ..sort((Product a, Product b) => b.rating.rate.compareTo(a.rating.rate));
+
+        final List<String> categoryNames = provider.categories.map((e) => e.name).toList();
 
         return RefreshIndicator(
           onRefresh: _refresh,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            children: <Widget>[
-              const Text(
-                'Categories',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: <Widget>[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: _SearchEntry(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SearchScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 48,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: provider.categories.length,
-                  separatorBuilder: (BuildContext context, int index) =>
-                      const SizedBox(width: 8),
-                  itemBuilder: (BuildContext context, int index) {
-                    final String category = provider.categories[index].name;
-                    return ActionChip(
-                      label: Text(category),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (BuildContext context) => ProductListScreen(
-                              title: category,
-                              category: category,
-                            ),
-                          ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: _PromoCarousel(products: provider.featuredProducts),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                  child: SizedBox(
+                    height: 42,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categoryNames.length + 1,
+                      separatorBuilder: (BuildContext context, int index) => const SizedBox(width: 8),
+                      itemBuilder: (BuildContext context, int index) {
+                        if (index == 0) {
+                          return CategoryChip(
+                            label: 'All',
+                            selected: _selectedCategory == null,
+                            onTap: () => setState(() => _selectedCategory = null),
+                          );
+                        }
+                        final String category = categoryNames[index - 1];
+                        return CategoryChip(
+                          label: category,
+                          selected: _selectedCategory == category,
+                          onTap: () => setState(() => _selectedCategory = category),
                         );
                       },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-              _sectionHeader('Featured Products', () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) => ProductListScreen(
-                      title: 'Featured Products',
-                      products: provider.featuredProducts,
                     ),
                   ),
-                );
-              }),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 235,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: provider.featuredProducts.length,
-                  separatorBuilder: (BuildContext context, int index) =>
-                      const SizedBox(width: 10),
-                  itemBuilder: (BuildContext context, int index) {
-                    final product = provider.featuredProducts[index];
-                    return SizedBox(
-                      width: 165,
-                      child: ProductCard(
-                        product: product,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (BuildContext context) => ProductDetailScreen(
-                              productId: product.id,
-                              initialProduct: product,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
                 ),
               ),
-              const SizedBox(height: 20),
-              _sectionHeader('Latest Products', () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (BuildContext context) => ProductListScreen(
-                      title: 'Latest Products',
-                      products: provider.latestProducts,
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 10),
-              GridView.builder(
-                itemCount: provider.latestProducts.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.72,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                ),
-                itemBuilder: (BuildContext context, int index) {
-                  final product = provider.latestProducts[index];
-                  return ProductCard(
-                    product: product,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (BuildContext context) => ProductDetailScreen(
-                          productId: product.id,
-                          initialProduct: product,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              _SectionHeaderSliver(title: 'Trending Products'),
+              _ProductGridSliver(products: trending),
+              _SectionHeaderSliver(title: 'Best Selling'),
+              _ProductGridSliver(products: bestSelling.take(4).toList()),
+              _SectionHeaderSliver(title: 'Recommended For You'),
+              _ProductGridSliver(products: recommended.take(4).toList()),
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
             ],
           ),
         );
@@ -161,35 +143,198 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildLoading() {
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: const <Widget>[
-        LoadingSkeleton(height: 28, width: 140),
-        SizedBox(height: 10),
-        LoadingSkeleton(height: 46),
-        SizedBox(height: 18),
-        LoadingSkeleton(height: 28, width: 180),
-        SizedBox(height: 10),
-        LoadingSkeleton(height: 230),
-      ],
-    );
-  }
-
-  Widget _buildError(String message) {
-    return NetworkErrorScreen(
-      message: message,
-      onRetry: _refresh,
-    );
-  }
-
-  Widget _sectionHeader(String title, VoidCallback onSeeAll) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        const LoadingSkeleton(height: 54, borderRadius: 16),
+        const SizedBox(height: 16),
+        const LoadingSkeleton(height: 168, borderRadius: 20),
+        const SizedBox(height: 14),
+        const CategoryListSkeleton(),
+        const SizedBox(height: 18),
+        GridView.builder(
+          itemCount: 4,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.58,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemBuilder: (BuildContext context, int index) => const ProductCardSkeleton(),
         ),
-        TextButton(onPressed: onSeeAll, child: const Text('See all')),
       ],
+    );
+  }
+}
+
+class _SearchEntry extends StatelessWidget {
+  const _SearchEntry({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          height: 54,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.search_rounded),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Search products, categories, brands',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              const Icon(Icons.tune_rounded),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PromoCarousel extends StatelessWidget {
+  const _PromoCarousel({required this.products});
+
+  final List<Product> products;
+
+  @override
+  Widget build(BuildContext context) {
+    if (products.isEmpty) {
+      return const LoadingSkeleton(height: 168, borderRadius: 20);
+    }
+
+    final List<Color> colors = <Color>[
+      const Color(0xFF5B67F6),
+      const Color(0xFF18C29C),
+      const Color(0xFFFF8A65),
+      const Color(0xFF7B61FF),
+    ];
+
+    return CarouselSlider.builder(
+      itemCount: products.length,
+      options: CarouselOptions(
+        height: 168,
+        autoPlay: true,
+        viewportFraction: 1,
+        enlargeCenterPage: false,
+      ),
+      itemBuilder: (BuildContext context, int index, int realIndex) {
+        final Product product = products[index];
+        final Color color = colors[index % colors.length];
+
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: <Color>[color, color.withValues(alpha: 0.75)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                'FLASH DEAL',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                product.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.white,
+                    ),
+              ),
+              const Spacer(),
+              Text(
+                'Up to 30% OFF',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                    ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SectionHeaderSliver extends StatelessWidget {
+  const _SectionHeaderSliver({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductGridSliver extends StatelessWidget {
+  const _ProductGridSliver({required this.products});
+
+  final List<Product> products;
+
+  @override
+  Widget build(BuildContext context) {
+    final double width = MediaQuery.of(context).size.width;
+    final int crossAxisCount = width >= 900 ? 4 : (width >= 600 ? 3 : 2);
+    final double aspect = width >= 600 ? 0.64 : 0.58;
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      sliver: SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: aspect,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (BuildContext context, int index) {
+            final Product product = products[index];
+            return ProductCard(
+              product: product,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ProductDetailScreen(
+                      productId: product.id,
+                      initialProduct: product,
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+          childCount: products.length,
+        ),
+      ),
     );
   }
 }

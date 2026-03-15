@@ -52,51 +52,30 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  TextSpan _highlightMatch(String title, String query) {
-    if (query.trim().isEmpty) {
-      return TextSpan(text: title);
-    }
-
-    final String lowerTitle = title.toLowerCase();
-    final String lowerQuery = query.toLowerCase();
-    final int start = lowerTitle.indexOf(lowerQuery);
-    if (start < 0) {
-      return TextSpan(text: title);
-    }
-
-    final int end = start + query.length;
-    return TextSpan(
-      children: <InlineSpan>[
-        TextSpan(text: title.substring(0, start)),
-        TextSpan(
-          text: title.substring(start, end),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        TextSpan(text: title.substring(end)),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bool showEmptySearch = _controller.text.isEmpty;
     final SearchProvider searchProvider = context.watch<SearchProvider>();
-    final List<String> suggestions = context
-        .read<ProductProvider>()
-        .products
+    final ProductProvider productProvider = context.watch<ProductProvider>();
+    final String query = _controller.text.trim();
+    final bool isIdle = query.isEmpty;
+
+    final List<String> suggestions = productProvider.products
         .map((Product p) => p.title)
-        .where(
-          (String title) => title
-              .toLowerCase()
-              .contains(_controller.text.trim().toLowerCase()),
-        )
-        .take(5)
+        .where((String title) => title.toLowerCase().contains(query.toLowerCase()))
+        .take(6)
         .toList();
 
+    final List<Product> popular = List<Product>.from(productProvider.products)
+      ..sort((Product a, Product b) => b.rating.count.compareTo(a.rating.count));
+    final int gridCount = MediaQuery.of(context).size.width >= 900
+      ? 4
+      : (MediaQuery.of(context).size.width >= 600 ? 3 : 2);
+    final double gridAspect = MediaQuery.of(context).size.width >= 600 ? 0.64 : 0.58;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Search Products')),
+      appBar: AppBar(title: const Text('Search')),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
         child: Column(
           children: <Widget>[
             TextField(
@@ -106,91 +85,122 @@ class _SearchScreenState extends State<SearchScreen> {
                 context.read<SearchProvider>().addRecentSearch(value);
               },
               decoration: InputDecoration(
-                hintText: 'Search by product title',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _controller.text.isEmpty
+                hintText: 'Search products and brands',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: query.isEmpty
                     ? null
                     : IconButton(
                         onPressed: () {
                           _controller.clear();
                           _search('');
                         },
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.close_rounded),
                       ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: showEmptySearch
+              child: isIdle
                   ? ListView(
                       children: <Widget>[
-                        const EmptyStateWidget(
-                          message: 'Start typing to search products.',
-                        ),
                         if (searchProvider.recentSearches.isNotEmpty) ...<Widget>[
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Recent searches',
-                            style: TextStyle(fontWeight: FontWeight.w700),
-                          ),
+                          Text('Recent Searches', style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: searchProvider.recentSearches
                                 .map(
-                                  (String query) => ActionChip(
-                                    label: Text(query),
+                                  (String item) => ActionChip(
+                                    label: Text(item),
+                                    avatar: const Icon(Icons.history_rounded, size: 16),
                                     onPressed: () {
-                                      _controller.text = query;
-                                      _search(query);
+                                      _controller.text = item;
+                                      _search(item);
                                     },
                                   ),
                                 )
                                 .toList(),
                           ),
+                          const SizedBox(height: 20),
                         ],
+                        Text('Popular Products', style: Theme.of(context).textTheme.titleMedium),
+                        const SizedBox(height: 10),
+                        GridView.builder(
+                          itemCount: popular.take(4).length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: gridCount,
+                            childAspectRatio: gridAspect,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                          itemBuilder: (BuildContext context, int index) {
+                            final Product product = popular[index];
+                            return ProductCard(
+                              product: product,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => ProductDetailScreen(
+                                      productId: product.id,
+                                      initialProduct: product,
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ],
                     )
                   : _results.isEmpty
-                      ? const EmptyStateWidget(message: 'No matching products found.')
+                      ? const EmptyStateWidget(
+                          icon: Icons.search_off_rounded,
+                          title: 'No Results Found',
+                          message: 'Try another keyword, category, or product name.',
+                        )
                       : ListView(
                           children: <Widget>[
                             if (suggestions.isNotEmpty) ...<Widget>[
-                              const Text(
-                                'Suggestions',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
+                              Text('Suggestions', style: Theme.of(context).textTheme.titleMedium),
                               const SizedBox(height: 8),
-                              ...suggestions.map(
-                                (String title) => ListTile(
-                                  dense: true,
-                                  leading: const Icon(Icons.search_rounded),
-                                  title: RichText(
-                                    text: _highlightMatch(title, _controller.text.trim()),
-                                  ),
-                                  onTap: () {
-                                    _controller.text = title;
-                                    _search(title);
-                                    context.read<SearchProvider>().addRecentSearch(title);
-                                  },
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Column(
+                                  children: suggestions
+                                      .map(
+                                        (String title) => ListTile(
+                                          dense: true,
+                                          leading: const Icon(Icons.search_rounded),
+                                          title: Text(title),
+                                          onTap: () {
+                                            _controller.text = title;
+                                            _search(title);
+                                            context
+                                                .read<SearchProvider>()
+                                                .addRecentSearch(title);
+                                          },
+                                        ),
+                                      )
+                                      .toList(),
                                 ),
                               ),
-                              const Divider(height: 18),
+                              const SizedBox(height: 12),
                             ],
                             GridView.builder(
                               itemCount: _results.length,
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 0.72,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 10,
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: gridCount,
+                                childAspectRatio: gridAspect,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
                               ),
                               itemBuilder: (BuildContext context, int index) {
                                 final Product product = _results[index];

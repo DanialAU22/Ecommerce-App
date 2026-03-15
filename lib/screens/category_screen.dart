@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/widgets/empty_state_widget.dart';
 import '../providers/product_provider.dart';
 import '../widgets/category_card.dart';
 import '../widgets/loading_skeleton.dart';
@@ -42,8 +43,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
         }
 
         if (provider.categories.isEmpty) {
-          return const Center(
-            child: Text('No categories found.'),
+          return const EmptyStateWidget(
+            icon: Icons.grid_view_rounded,
+            title: 'No Categories',
+            message: 'Categories will appear here when data is available.',
           );
         }
 

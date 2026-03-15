@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/auth_provider.dart';
+import '../core/widgets/empty_state_widget.dart';
 import '../providers/cart_provider.dart';
-import '../providers/order_provider.dart';
-import 'login_screen.dart';
+import 'checkout_screen.dart';
 import '../widgets/cart_item_widget.dart';
 
 class CartScreen extends StatefulWidget {
@@ -15,6 +14,8 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  static const double _shipping = 12;
+
   @override
   void initState() {
     super.initState();
@@ -32,16 +33,21 @@ class _CartScreenState extends State<CartScreen> {
         }
 
         if (provider.cartItems.isEmpty) {
-          return const Center(
-            child: Text('Your cart is empty.'),
+          return const EmptyStateWidget(
+            icon: Icons.shopping_cart_outlined,
+            title: 'Your Cart Is Empty',
+            message: 'Add products to start your checkout journey.',
           );
         }
+
+        final double subtotal = provider.totalPrice;
+        final double total = subtotal + _shipping;
 
         return Column(
           children: <Widget>[
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 itemCount: provider.cartItems.length,
                 itemBuilder: (BuildContext context, int index) {
                   final item = provider.cartItems[index];
@@ -57,73 +63,40 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ),
             Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFEEEEEE))),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.14),
+                  ),
+                ),
               ),
               child: Column(
                 children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      const Text(
-                        'Total',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '\$${provider.totalPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F9D58),
-                        ),
-                      ),
-                    ],
+                  _SummaryRow(label: 'Subtotal', value: subtotal),
+                  const SizedBox(height: 8),
+                  const _SummaryRow(label: 'Shipping', value: _shipping),
+                  const SizedBox(height: 8),
+                  _SummaryRow(
+                    label: 'Total',
+                    value: total,
+                    emphasis: true,
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final AuthProvider auth = context.read<AuthProvider>();
-                        final OrderProvider orderProvider =
-                            context.read<OrderProvider>();
-                        final ScaffoldMessengerState messenger =
-                            ScaffoldMessenger.of(context);
-                        final NavigatorState navigator = Navigator.of(context);
-
-                        if (!auth.isLoggedIn) {
-                          await navigator.push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                          );
-                          if (!mounted) {
-                            return;
-                          }
-                          if (!auth.isLoggedIn) {
-                            return;
-                          }
-                        }
-
-                        await orderProvider.placeOrder(
-                          provider.cartItems.map((e) => e.product).toList(),
-                          provider.totalPrice,
-                        );
-                        await provider.clearCart();
-
-                        if (!mounted) {
-                          return;
-                        }
-
-                        messenger.showSnackBar(
-                          const SnackBar(content: Text('Order placed successfully')),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const CheckoutScreen(),
+                          ),
                         );
                       },
-                      child: const Text('Checkout & Place Order'),
+                      icon: const Icon(Icons.payment_rounded),
+                      label: const Text('Proceed to Checkout'),
                     ),
                   ),
                 ],
@@ -132,6 +105,33 @@ class _CartScreenState extends State<CartScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.emphasis = false,
+  });
+
+  final String label;
+  final double value;
+  final bool emphasis;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle? style = emphasis
+        ? Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)
+        : Theme.of(context).textTheme.bodyMedium;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: <Widget>[
+        Text(label, style: style),
+        Text('\$${value.toStringAsFixed(2)}', style: style),
+      ],
     );
   }
 }

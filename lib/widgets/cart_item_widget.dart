@@ -19,17 +19,28 @@ class CartItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Row(
-          children: <Widget>[
-            CachedNetworkImage(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 72,
+            height: 72,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: CachedNetworkImage(
               imageUrl: item.product.image,
-              width: 62,
-              height: 62,
               fit: BoxFit.contain,
               errorWidget: (
                 BuildContext context,
@@ -38,47 +49,70 @@ class CartItemWidget extends StatelessWidget {
               ) =>
                   const Icon(Icons.broken_image_rounded),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    item.product.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '\$${item.product.price.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      color: Color(0xFF0F9D58),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Row(
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                IconButton(
-                  onPressed: onDecrease,
-                  icon: const Icon(Icons.remove_circle_outline),
+                Text(
+                  item.product.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
-                Text('${item.quantity}'),
-                IconButton(
-                  onPressed: onIncrease,
-                  icon: const Icon(Icons.add_circle_outline),
+                const SizedBox(height: 6),
+                Text(
+                  '\$${item.product.price.toStringAsFixed(2)} each',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                IconButton(
-                  onPressed: onRemove,
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                const SizedBox(height: 6),
+                Text(
+                  '\$${item.lineTotal.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: scheme.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          Column(
+            children: <Widget>[
+              IconButton(
+                onPressed: onRemove,
+                icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: onDecrease,
+                      icon: const Icon(Icons.remove_rounded),
+                    ),
+                    Text(
+                      '${item.quantity}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: onIncrease,
+                      icon: const Icon(Icons.add_rounded),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

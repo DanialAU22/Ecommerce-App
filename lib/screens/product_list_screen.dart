@@ -252,7 +252,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(widget.title),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(widget.title),
+                if (!_isLoading)
+                  Text(
+                    '${_visibleProducts.length} products',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+              ],
+            ),
             actions: <Widget>[
               IconButton(
                 onPressed: () => _openFilters(provider),
@@ -266,20 +276,25 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 ? GridView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: 6,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.72,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: MediaQuery.of(context).size.width >= 900
+                          ? 4
+                          : (MediaQuery.of(context).size.width >= 600 ? 3 : 2),
+                      childAspectRatio: MediaQuery.of(context).size.width >= 600 ? 0.64 : 0.58,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
                     ),
                     itemBuilder: (BuildContext context, int index) =>
-                        const LoadingSkeleton(),
+                        const ProductCardSkeleton(),
                   )
                 : _visibleProducts.isEmpty
                     ? ListView(
                         children: const <Widget>[
                           SizedBox(height: 120),
-                          EmptyStateWidget(message: 'No products match current filters.'),
+                          EmptyStateWidget(
+                            title: 'No Matches Found',
+                            message: 'No products match your selected filters.',
+                          ),
                         ],
                       )
                     : GridView.builder(
@@ -290,11 +305,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                 ? 1
                                 : 0),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.72,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: MediaQuery.of(context).size.width >= 900
+                              ? 4
+                              : (MediaQuery.of(context).size.width >= 600 ? 3 : 2),
+                          childAspectRatio: MediaQuery.of(context).size.width >= 600 ? 0.64 : 0.58,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
                         ),
                         itemBuilder: (BuildContext context, int index) {
                           if (index >= _visibleProducts.length) {

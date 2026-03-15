@@ -1,7 +1,9 @@
+import 'package:animations/animations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
@@ -12,12 +14,10 @@ import 'providers/review_provider.dart';
 import 'providers/search_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/cart_screen.dart';
-import 'screens/category_screen.dart';
 import 'screens/favorite_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/search_screen.dart';
-import 'theme/app_theme.dart';
 import 'utils/constants.dart';
 
 Future<void> main() async {
@@ -87,6 +87,20 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
+  static const List<String> _titles = <String>[
+    'Discover',
+    'My Cart',
+    'Favorites',
+    'Account',
+  ];
+
+  final List<Widget> _screens = const <Widget>[
+    HomeScreen(),
+    CartScreen(),
+    FavoriteScreen(),
+    ProfileScreen(),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -97,24 +111,10 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
-  static const List<String> _titles = <String>[
-    'ShopSphere',
-    'Categories',
-    'Cart',
-    'Favorites',
-    'Profile',
-  ];
-
-  final List<Widget> _screens = const <Widget>[
-    HomeScreen(),
-    CategoryScreen(),
-    CartScreen(),
-    FavoriteScreen(),
-    ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
     return Consumer2<CartProvider, FavoriteProvider>(
       builder: (
         BuildContext context,
@@ -126,58 +126,91 @@ class _MainShellState extends State<MainShell> {
           appBar: AppBar(
             title: Text(_titles[_currentIndex]),
             actions: <Widget>[
-              if (_currentIndex != 4)
-                IconButton(
-                  icon: const Icon(Icons.search_rounded),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SearchScreen(),
-                      ),
-                    );
-                  },
-                ),
+              IconButton(
+                icon: const Icon(Icons.search_rounded),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SearchScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 4),
             ],
           ),
-          body: IndexedStack(
-            index: _currentIndex,
-            children: _screens,
-          ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: (int index) {
-              setState(() => _currentIndex = index);
+          body: PageTransitionSwitcher(
+            duration: const Duration(milliseconds: 320),
+            transitionBuilder: (
+              Widget child,
+              Animation<double> primaryAnimation,
+              Animation<double> secondaryAnimation,
+            ) {
+              return SharedAxisTransition(
+                animation: primaryAnimation,
+                secondaryAnimation: secondaryAnimation,
+                transitionType: SharedAxisTransitionType.horizontal,
+                child: child,
+              );
             },
-            destinations: <NavigationDestination>[
-              const NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                label: 'Home',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.grid_view_rounded),
-                label: 'Categories',
-              ),
-              NavigationDestination(
-                icon: Badge.count(
-                  isLabelVisible: cartProvider.itemCount > 0,
-                  count: cartProvider.itemCount,
-                  child: const Icon(Icons.shopping_cart_outlined),
+            child: KeyedSubtree(
+              key: ValueKey<int>(_currentIndex),
+              child: _screens[_currentIndex],
+            ),
+          ),
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              border: Border(
+                top: BorderSide(
+                  color: scheme.outline.withValues(alpha: 0.12),
                 ),
-                label: 'Cart',
               ),
-              NavigationDestination(
-                icon: Badge.count(
-                  isLabelVisible: favoriteProvider.favorites.isNotEmpty,
-                  count: favoriteProvider.favorites.length,
-                  child: const Icon(Icons.favorite_border_rounded),
+            ),
+            child: NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (int index) {
+                setState(() => _currentIndex = index);
+              },
+              destinations: <NavigationDestination>[
+                const NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: 'Home',
                 ),
-                label: 'Favorites',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.person_outline_rounded),
-                label: 'Profile',
-              ),
-            ],
+                NavigationDestination(
+                  icon: Badge.count(
+                    isLabelVisible: cartProvider.itemCount > 0,
+                    count: cartProvider.itemCount,
+                    child: const Icon(Icons.shopping_cart_outlined),
+                  ),
+                  selectedIcon: Badge.count(
+                    isLabelVisible: cartProvider.itemCount > 0,
+                    count: cartProvider.itemCount,
+                    child: const Icon(Icons.shopping_cart_rounded),
+                  ),
+                  label: 'Cart',
+                ),
+                NavigationDestination(
+                  icon: Badge.count(
+                    isLabelVisible: favoriteProvider.favorites.isNotEmpty,
+                    count: favoriteProvider.favorites.length,
+                    child: const Icon(Icons.favorite_border_rounded),
+                  ),
+                  selectedIcon: Badge.count(
+                    isLabelVisible: favoriteProvider.favorites.isNotEmpty,
+                    count: favoriteProvider.favorites.length,
+                    child: const Icon(Icons.favorite_rounded),
+                  ),
+                  label: 'Favorites',
+                ),
+                const NavigationDestination(
+                  icon: Icon(Icons.person_outline_rounded),
+                  selectedIcon: Icon(Icons.person_rounded),
+                  label: 'Profile',
+                ),
+              ],
+            ),
           ),
         );
       },
