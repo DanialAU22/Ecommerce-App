@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
 class LoadingSkeleton extends StatelessWidget {
   const LoadingSkeleton({
@@ -14,21 +15,24 @@ class LoadingSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.25, end: 0.55),
-      duration: const Duration(milliseconds: 900),
-      curve: Curves.easeInOut,
-      builder: (BuildContext context, double value, Widget? child) {
-        return Container(
-          height: height,
-          width: width,
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: value),
-            borderRadius: BorderRadius.circular(borderRadius),
-          ),
-        );
-      },
-      onEnd: () {},
+    final Color base = Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey.shade800
+        : Colors.grey.shade300;
+    final Color highlight = Theme.of(context).brightness == Brightness.dark
+        ? Colors.grey.shade700
+        : Colors.grey.shade100;
+
+    return Shimmer.fromColors(
+      baseColor: base,
+      highlightColor: highlight,
+      child: Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+          color: base,
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+      ),
     );
   }
 }

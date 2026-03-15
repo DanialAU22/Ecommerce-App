@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/order_provider.dart';
+import 'login_screen.dart';
 import '../widgets/cart_item_widget.dart';
 
 class CartScreen extends StatefulWidget {
@@ -84,14 +87,43 @@ class _CartScreenState extends State<CartScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Checkout is UI-only in this demo.'),
-                          ),
+                      onPressed: () async {
+                        final AuthProvider auth = context.read<AuthProvider>();
+                        final OrderProvider orderProvider =
+                            context.read<OrderProvider>();
+                        final ScaffoldMessengerState messenger =
+                            ScaffoldMessenger.of(context);
+                        final NavigatorState navigator = Navigator.of(context);
+
+                        if (!auth.isLoggedIn) {
+                          await navigator.push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                          if (!mounted) {
+                            return;
+                          }
+                          if (!auth.isLoggedIn) {
+                            return;
+                          }
+                        }
+
+                        await orderProvider.placeOrder(
+                          provider.cartItems.map((e) => e.product).toList(),
+                          provider.totalPrice,
+                        );
+                        await provider.clearCart();
+
+                        if (!mounted) {
+                          return;
+                        }
+
+                        messenger.showSnackBar(
+                          const SnackBar(content: Text('Order placed successfully')),
                         );
                       },
-                      child: const Text('Checkout'),
+                      child: const Text('Checkout & Place Order'),
                     ),
                   ),
                 ],

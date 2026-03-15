@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/widgets/network_error_screen.dart';
 import '../providers/product_provider.dart';
 import '../widgets/loading_skeleton.dart';
 import '../widgets/product_card.dart';
@@ -173,23 +174,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildError(String message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(Icons.error_outline, size: 42, color: Colors.redAccent),
-            const SizedBox(height: 10),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _refresh,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
+    return NetworkErrorScreen(
+      message: message,
+      onRetry: _refresh,
     );
   }
 

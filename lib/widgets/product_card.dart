@@ -17,9 +17,9 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(14),
-      elevation: 3,
+      elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.15),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -31,17 +31,20 @@ class ProductCard extends StatelessWidget {
             children: <Widget>[
               Expanded(
                 child: Center(
-                  child: CachedNetworkImage(
-                    imageUrl: product.image,
-                    fit: BoxFit.contain,
-                    placeholder: (BuildContext context, String url) =>
-                        const LoadingSkeleton(height: 90, width: 90),
-                    errorWidget: (
-                      BuildContext context,
-                      String url,
-                      Object error,
-                    ) =>
-                        const Icon(Icons.broken_image_rounded),
+                  child: Hero(
+                    tag: 'product-image-${product.id}',
+                    child: CachedNetworkImage(
+                      imageUrl: product.image,
+                      fit: BoxFit.contain,
+                      placeholder: (BuildContext context, String url) =>
+                          const LoadingSkeleton(height: 90, width: 90),
+                      errorWidget: (
+                        BuildContext context,
+                        String url,
+                        Object error,
+                      ) =>
+                          const Icon(Icons.broken_image_rounded),
+                    ),
                   ),
                 ),
               ),
