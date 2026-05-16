@@ -15,18 +15,6 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
-  static const String _webApiKey = String.fromEnvironment('FIREBASE_WEB_API_KEY');
-  static const String _androidApiKey = String.fromEnvironment(
-    'FIREBASE_ANDROID_API_KEY',
-  );
-  static const String _iosApiKey = String.fromEnvironment('FIREBASE_IOS_API_KEY');
-  static const String _macosApiKey = String.fromEnvironment(
-    'FIREBASE_MACOS_API_KEY',
-  );
-  static const String _windowsApiKey = String.fromEnvironment(
-    'FIREBASE_WINDOWS_API_KEY',
-  );
-
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
@@ -35,11 +23,20 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        return ios;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for ios - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -52,50 +49,22 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: _webApiKey,
-    appId: '1:774850821450:web:898c2d1ab7e531f4d415b3',
-    messagingSenderId: '774850821450',
-    projectId: 'ecommerceapp-8f3a3',
-    authDomain: 'ecommerceapp-8f3a3.firebaseapp.com',
-    storageBucket: 'ecommerceapp-8f3a3.firebasestorage.app',
-    measurementId: 'G-H15HV7LQR2',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: _androidApiKey,
+    apiKey: 'AIzaSyC0EZLOmzwGm67S1ZJbr1pEYpzwsp8TKEk',
     appId: '1:774850821450:android:bd0380cd5182a2f3d415b3',
     messagingSenderId: '774850821450',
     projectId: 'ecommerceapp-8f3a3',
     storageBucket: 'ecommerceapp-8f3a3.firebasestorage.app',
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: _iosApiKey,
-    appId: '1:774850821450:ios:6189136d605528c2d415b3',
-    messagingSenderId: '774850821450',
-    projectId: 'ecommerceapp-8f3a3',
-    storageBucket: 'ecommerceapp-8f3a3.firebasestorage.app',
-    iosBundleId: 'com.example.ecommerceApp',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: _macosApiKey,
-    appId: '1:774850821450:ios:6189136d605528c2d415b3',
-    messagingSenderId: '774850821450',
-    projectId: 'ecommerceapp-8f3a3',
-    storageBucket: 'ecommerceapp-8f3a3.firebasestorage.app',
-    iosBundleId: 'com.example.ecommerceApp',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: _windowsApiKey,
-    appId: '1:774850821450:web:2aa19582b5983357d415b3',
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyANwEONE2behrSjUixVC8cSUN78mG7vw9Y',
+    appId: '1:774850821450:web:898c2d1ab7e531f4d415b3',
     messagingSenderId: '774850821450',
     projectId: 'ecommerceapp-8f3a3',
     authDomain: 'ecommerceapp-8f3a3.firebaseapp.com',
     storageBucket: 'ecommerceapp-8f3a3.firebasestorage.app',
-    measurementId: 'G-696DCFE81S',
+    measurementId: 'G-H15HV7LQR2',
   );
 
 }
